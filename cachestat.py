@@ -98,7 +98,7 @@ while (1):
 	hits = total - misses
 	ratio = 100 * hits / total 
 	#print ("hits total %d %d " % (hits , total))
-	print ("mpa:%d mbd:%d apcl:%d apd:%d total:%d misses:%d hits:%d ratio:%d" % (mpa,mbd,apcl,apd,total,misses,hits,ratio))        
+	#print ("mpa:%d mbd:%d apcl:%d apd:%d total:%d misses:%d hits:%d ratio:%d" % (mpa,mbd,apcl,apd,total,misses,hits,ratio))        
 	print("%8d %8d %8d %7.1f%%" % (hits,misses,mbd,ratio))
         mbd=0
         apcl=0
