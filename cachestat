@@ -27,7 +27,7 @@ def signal_ignore(signal, frame):
         print()
 
 
-# Set global variables to defaults, I have set total and hits to 1 to avoid divide by zero errors.A
+# Set global variables to defaults, I have set total and hits to 1 to avoid divide by zero errors
 #
 mpa=0
 mbd=0
@@ -86,10 +86,10 @@ while (1):
                 signal.signal(signal.SIGINT, signal_ignore)
 
 
-        #print("%-16s %-26s %8s" % ("ADDR", "FUNC", "COUNT"))
+        
         counts = b.get_table("counts")
         for k, v in sorted(counts.items(), key=lambda counts: counts[1].value):
-                #print("%-26s %8d" % (b.ksym(k.ip), v.value))
+               
                 if re.match ('mark_page_accessed',b.ksym(k.ip)) is not None:
                    mpa=v.value
                    if mpa < 0 : mpa = 0
