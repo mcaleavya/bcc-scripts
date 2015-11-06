@@ -12,18 +12,23 @@
 # Licensed under the Apache License, Version 2.0 (the "License")
 #
 # 09-Sep-2015   Brendan Gregg   Created this.
-# 06-Nov-2015   Allan McAleavy 
-# 
+# 06-Nov-2015   Allan McAleavy
+#
 
 from __future__ import print_function
 from bcc import BPF
 from time import sleep, strftime
 import argparse
 import signal
-import re	
+import re
+
+# signal handler
+def signal_ignore(signal, frame):
+        print()
+
 
 # Set global variables to defaults, I have set total and hits to 1 to avoid divide by zero errors.A
-# 
+#
 mpa=0
 mbd=0
 apcl=0
@@ -31,6 +36,19 @@ apd=0
 total=1
 misses=0
 hits=1
+
+# args
+examples = """examples:
+    ./cachestat -i 1'       # print every second hit/miss stats
+"""
+parser = argparse.ArgumentParser(
+        description="show Linux page cache hit/miss statistics",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=examples)
+parser.add_argument("-i", "--interval", default=1,
+        help="summary interval, seconds")
+args = parser.parse_args()
+
 
 # load BPF program
 bpf_text = """
@@ -56,12 +74,12 @@ b.attach_kprobe(event="mark_buffer_dirty", fn_name="trace_count")
 
 # header
 print("%8s %8s %8s %8s" % ("HITS","MISSES","DIRTIES","RATIO"))
-exiting=0
 
+exiting=0 if args.interval else 1
 
 while (1):
         try:
-                sleep(1)
+                sleep(int(args.interval))
         except KeyboardInterrupt:
                 exiting=1
                 # as cleanup can take many seconds, trap Ctrl-C:
@@ -73,33 +91,32 @@ while (1):
         for k, v in sorted(counts.items(), key=lambda counts: counts[1].value):
                 #print("%-26s %8d" % (b.ksym(k.ip), v.value))
                 if re.match ('mark_page_accessed',b.ksym(k.ip)) is not None:
-		   mpa=v.value
-		   if mpa < 0 : mpa = 0
+                   mpa=v.value
+                   if mpa < 0 : mpa = 0
 
-	        if re.match('mark_buffer_dirty',b.ksym(k.ip)) is not None:
-	           mbd=v.value
-		   if mbd < 0 : mdb = 0	
+                if re.match('mark_buffer_dirty',b.ksym(k.ip)) is not None:
+                   mbd=v.value
+                   if mbd < 0 : mdb = 0
 
-		if re.match('add_to_page_cache_lru',b.ksym(k.ip)) is not None:
-	    	   apcl=v.value
-		   if apcl < 0 : apcl = 0
+                if re.match('add_to_page_cache_lru',b.ksym(k.ip)) is not None:
+                   apcl=v.value
+                   if apcl < 0 : apcl = 0
 
-		if re.match('account_page_dirtied',b.ksym(k.ip)) is not None:
-	           apd=v.value
-  		   if apd < 0 : apd = 0
+                if re.match('account_page_dirtied',b.ksym(k.ip)) is not None:
+                   apd=v.value
+                   if apd < 0 : apd = 0
 
                 total = mpa - mbd
-   	        misses = apcl - apd 
+                misses = apcl - apd
 
-	        if misses < 0: 
-                    misses =  0 
-	
+                if misses < 0:
+                    misses =  0
+
         counts.clear()
-	hits = total - misses
-	ratio = 100 * hits / total 
-	#print ("hits total %d %d " % (hits , total))
-	#print ("mpa:%d mbd:%d apcl:%d apd:%d total:%d misses:%d hits:%d ratio:%d" % (mpa,mbd,apcl,apd,total,misses,hits,ratio))        
-	print("%8d %8d %8d %7.1f%%" % (hits,misses,mbd,ratio))
+        hits = total - misses
+        ratio = 100 * hits / total
+        #print ("mpa:%d mbd:%d apcl:%d apd:%d total:%d misses:%d hits:%d ratio:%d" % (mpa,mbd,apcl,apd,total,misses,hits,ratio))
+        print("%8d %8d %8d %7.1f%%" % (hits,misses,mbd,ratio))
         mbd=0
         apcl=0
         apd=0
@@ -111,4 +128,3 @@ while (1):
         if exiting:
                 print("Detaching...")
                 exit()
-
