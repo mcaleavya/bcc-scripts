@@ -1,6 +1,10 @@
 BCC Scripts 
 ===========
 
+<b> cachestat </b>
+
+Show cache hit/miss ratios
+
 A collection of learning BCC. Examples taken from Brendan Gregg 
 
 <pre>
