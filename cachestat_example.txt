@@ -1,0 +1,63 @@
+usage: cachestat_v2 [-h] [-i INTERVAL] [-T] [-L]
+
+show Linux page cache hit/miss statistics
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INTERVAL, --interval INTERVAL
+                        summary interval, seconds
+  -T, --timestamp       include timestamp on output
+  -L, --latency         include latency historgrams on output experimental
+
+examples:
+    ./cachestat -i 1        # print every second hit/miss stats
+    ./cachestat -L -i 1     # show latency for each function access
+    ./cachestat -T -i 1     # include timestamps
+
+[root@localhost ~]# ./cachestat
+    HITS   MISSES  DIRTIES    RATIO   BUFFERS_MB  CACHED_MB
+       1        0        0   100.0%            0         85
+       1        0        0   100.0%            0         85
+       1        0        0   100.0%            0         85
+       1        0        0   100.0%            0         85
+
+[root@localhost bcc]# ./cachestat -T
+TIME         HITS   MISSES  DIRTIES    RATIO   BUFFERS_MB  CACHED_MB
+14:27:55        1        0        0   100.0%            3        149
+14:27:56        1        0        0   100.0%            3        149
+14:27:57      474        0      200   100.0%            3        149
+14:27:58        1        0        0   100.0%            3        149
+14:27:59        1        0        0   100.0%            3        149
+14:28:00        1        0        0   100.0%            3        149
+14:28:01        1        0        0   100.0%            3        149
+
+We can see that we have 200 entries in the Dirty column, this was generated as follows. 
+
+[root@localhost tools]# dd if=/dev/urandom of=/var/test count=100 bs=8192
+100+0 records in
+100+0 records out
+819200 bytes (819 kB) copied, 0.108842 s, 7.5 MB/s
+
+the value 819200 / PAGESIZE(4096) = 200
+
+Below shows an example of the histogram showing how long each function took from entry to return in usecs.
+
+[root@henky bcc]# ./cachestat_v2 -L
+Latency Histogram for Page Cache Function Access
+
+Function = add_to_page_cache_lru
+     usecs               : count     distribution
+         0 -> 1          : 50       |****************************************|
+         2 -> 3          : 22       |*****************                       |
+         4 -> 7          : 8        |******                                  |
+
+Function = account_page_dirtied
+     usecs               : count     distribution
+         0 -> 1          : 79       |****************************************|
+         2 -> 3          : 1        |                                        |
+
+Function = mark_page_accessed
+     usecs               : count     distribution
+         0 -> 1          : 723      |****************************************|
+         2 -> 3          : 3        |                                        |
+Detaching...
