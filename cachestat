@@ -13,7 +13,7 @@
 #
 # 09-Sep-2015   Brendan Gregg   Created this.
 # 06-Nov-2015   Allan McAleavy
-#
+# 30-Nov-2015   Allan McAleavy  Added Latency Histograms
 
 from __future__ import print_function
 from bcc import BPF
@@ -49,11 +49,13 @@ apcl=0
 apd=0
 total=1
 misses=0
-hits=1
+hits=0
 
 # args
 examples = """examples:
-    ./cachestat -i 1'       # print every second hit/miss stats
+    ./cachestat -i 1        # print every second hit/miss stats
+    ./cachestat -L -i 1     # show latency for each function access
+    ./cachestat -T -i 1     # include timestamps
 """
 parser = argparse.ArgumentParser(
         description="show Linux page cache hit/miss statistics",
@@ -63,35 +65,90 @@ parser.add_argument("-i", "--interval", default=1,
         help="summary interval, seconds")
 parser.add_argument("-T", "--timestamp", action="store_true",
         help="include timestamp on output")
+parser.add_argument("-L", "--latency", action="store_true",
+        help="include latency historgrams on output experimental")
 args = parser.parse_args()
 
 
 # load BPF program
 bpf_text = """
+
 #include <uapi/linux/ptrace.h>
 struct key_t {
         u64 ip;
 };
+
+typedef struct ip_key {
+        u64 ip;
+        u64 slot;
+} ip_key_t;
+
 BPF_HASH(counts, struct key_t);
-int trace_count(struct pt_regs *ctx) {
+BPF_HASH(start, u32);
+BPF_HASH(ipaddr, u32);
+BPF_HISTOGRAM(dist, ip_key_t);
+
+
+int trace_start(struct pt_regs *ctx) {
         struct key_t key = {};
         u64 zero = 0, *val;
+        u32 pid;
+        u64 ts , ip;
+
         key.ip = ctx->ip;
-        val = counts.lookup_or_init(&key, &zero);
+        ip = ctx->ip;
+        val = counts.lookup_or_init(&key, &zero);  // update counter
+        pid = bpf_get_current_pid_tgid();  // get pid for updates to histogram
+        ts = bpf_ktime_get_ns();
+        start.update(&pid,&ts); // update start time
+        ipaddr.update(&pid,&ip); // update histogram
         (*val)++;
         return 0;
 }
+
+
+int trace_end(struct pt_regs *ctx) {
+        u32 pid;
+        u64 *tsp, delta;
+        u64 ip , *ipp;
+
+        pid = bpf_get_current_pid_tgid();
+        tsp = start.lookup(&pid);
+
+        if (tsp == 0) {
+                return 0;
+        }
+
+        delta = bpf_ktime_get_ns() - *tsp;
+        start.delete(&pid);  // end timer
+        ipp = ipaddr.lookup(&pid);
+        if (ipp)
+         {
+          ip = *ipp;
+          dist.increment((ip_key_t){ip, bpf_log2l(delta / 1000)});
+          ipaddr.delete(&pid);
+         }
+
+        return 0;
+}
+
 """
 b = BPF(text=bpf_text)
-b.attach_kprobe(event="add_to_page_cache_lru", fn_name="trace_count")
-b.attach_kprobe(event="mark_page_accessed", fn_name="trace_count")
-b.attach_kprobe(event="account_page_dirtied", fn_name="trace_count")
-b.attach_kprobe(event="mark_buffer_dirty", fn_name="trace_count")
+b.attach_kprobe(event="add_to_page_cache_lru", fn_name="trace_start")
+b.attach_kretprobe(event="add_to_page_cache_lru", fn_name="trace_end")
+b.attach_kprobe(event="mark_page_accessed", fn_name="trace_start")
+b.attach_kretprobe(event="mark_page_accessed", fn_name="trace_end")
+b.attach_kprobe(event="account_page_dirtied", fn_name="trace_start")
+b.attach_kretprobe(event="account_page_dirtied", fn_name="trace_end")
+b.attach_kprobe(event="mark_buffer_dirty", fn_name="trace_start")
+b.attach_kretprobe(event="mark_buffer_dirty", fn_name="trace_end")
 
 # header
-if args.timestamp:
+if args.latency:
+    print("Latency Histogram for Page Cache Function Access")
+elif args.timestamp:
     print("%-8s %8s %8s %8s %8s %12s %10s" % ("TIME","HITS","MISSES","DIRTIES","RATIO","BUFFERS_MB","CACHED_MB"))
-else:
+elif not args.latency or not args.timestamp:
     print("%8s %8s %8s %8s %12s %10s" % ("HITS","MISSES","DIRTIES","RATIO","BUFFERS_MB","CACHED_MB"))
 
 exiting=0 if args.interval else 1
@@ -141,10 +198,14 @@ while (1):
         cached = int(mem["Cached"]) /1024
         buffer = int(mem["Buffers"]) /1024
 
-        if args.timestamp:
+        if args.latency:
+                dist = b.get_table("dist");
+                dist.print_log2_hist("usecs", "Function", BPF.ksym)
+                dist.clear()
+        elif args.timestamp:
                 print("%-8s %8d %8d %8d %7.1f%% %12.0f %10.0f" % (strftime("%H:%M:%S"),hits,misses,mbd,ratio,buffer,cached))
-        else:
-                print("%8d %8d %8d %7.1f%% %12.0f %10.0f" % (hits,misses,mbd,ratio,buffer,cached))
+        elif not args.latency or not args.timestamp:
+                print("%8d %8d %8d %7.1f%% %12.0f %10.0f"% (hits,misses,mbd,ratio,buffer,cached))
 
         mbd=0
         apcl=0
