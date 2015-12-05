@@ -14,24 +14,62 @@ examples:
     ./cachestat -L -i 1     # show latency for each function access
     ./cachestat -T -i 1     # include timestamps
 
-[root@localhost ~]# ./cachestat
+[root@localhost bcc]# ./cachestat
     HITS   MISSES  DIRTIES    RATIO   BUFFERS_MB  CACHED_MB
-       1        0        0   100.0%            0         85
-       1        0        0   100.0%            0         85
-       1        0        0   100.0%            0         85
-       1        0        0   100.0%            0         85
+       0        0        0     0.0%            0         75
+       0        0        0     0.0%            0         75
+       0        0        0     0.0%            0         75
+       0        0        0     0.0%            0         75
+     119       64        0    65.0%            0         76
+     541      456        0    54.3%            0         78
+       0        0        0     0.0%            0         78
+       0        0        0     0.0%            0         78
+       0        0        0     0.0%            0         78
+       0        0        0     0.0%            0         78
+       0        0        0     0.0%            0         78
+       0        0        0     0.0%            0         78
+       0        0        0     0.0%            0         78
+      -1        0        2   100.0%            0         72
+       0        0        0     0.0%            0         72
+       0        0        0     0.0%            0         72
+       0        0        0     0.0%            0         72
+       0        0        0     0.0%            0         72
+      33      512        0     6.1%            0         74
+     539      264        0    67.1%            0         75
+       0        0        0     0.0%            0         75
+       0        0        0     0.0%            0         75
+
 
 [root@localhost bcc]# ./cachestat -T
+[root@localhost bcc]# ./cachestat -T 
 TIME         HITS   MISSES  DIRTIES    RATIO   BUFFERS_MB  CACHED_MB
-14:27:55        1        0        0   100.0%            3        149
-14:27:56        1        0        0   100.0%            3        149
-14:27:57      474        0      200   100.0%            3        149
-14:27:58        1        0        0   100.0%            3        149
-14:27:59        1        0        0   100.0%            3        149
-14:28:00        1        0        0   100.0%            3        149
-14:28:01        1        0        0   100.0%            3        149
-
+13:40:42        0        0        0     0.0%            0         80
+13:40:43        0        0        0     0.0%            0         80
+13:40:44        1        1        0    50.0%            0         80
+13:40:45        0        0        0     0.0%            0         80
+13:40:46      -15        0       15   100.0%            0         71
+13:40:47        0        0        0     0.0%            0         71
+13:40:48        0        0        0     0.0%            0         71
+13:40:49        0        0        0     0.0%            0         71
+13:40:50        0        0        0     0.0%            0         71
+13:40:51       33      256        0    11.4%            0         72
+13:40:53      556      520        0    51.7%            0         74
+13:40:54        0        0        0     0.0%            0         74
+13:40:55        0        0        0     0.0%            0         74
+13:40:56      471       20      200    95.9%            0         75
+13:40:57        0        0        0     0.0%            0         75
+13:40:58        0        0        0     0.0%            0         75
+13:40:59        0        0        0     0.0%            0         75
+13:41:00       -1        0        2   100.0%            0         71
+13:41:01        0        0        0     0.0%            0         71
+13:41:02        0        0        0     0.0%            0         71
+13:41:03        0        0        0     0.0%            0         71
+13:41:04        0        0        0     0.0%            0         71
+13:41:05        0        0        0     0.0%            0         71
+13:41:06        0        0        0     0.0%            0         71
 We can see that we have 200 entries in the Dirty column, this was generated as follows. 
+
+We can also see the drop or caches at 13:41:00 - echo 3 > /proc/sys/vm/drop_caches
 
 [root@localhost tools]# dd if=/dev/urandom of=/var/test count=100 bs=8192
 100+0 records in
@@ -42,22 +80,56 @@ the value 819200 / PAGESIZE(4096) = 200
 
 Below shows an example of the histogram showing how long each function took from entry to return in usecs.
 
-[root@henky bcc]# ./cachestat_v2 -L
+[root@localhost bcc]# ./cachestat -L
 Latency Histogram for Page Cache Function Access
-
-Function = add_to_page_cache_lru
-     usecs               : count     distribution
-         0 -> 1          : 50       |****************************************|
-         2 -> 3          : 22       |*****************                       |
-         4 -> 7          : 8        |******                                  |
 
 Function = account_page_dirtied
      usecs               : count     distribution
-         0 -> 1          : 79       |****************************************|
-         2 -> 3          : 1        |                                        |
+         0 -> 1          : 0        |                                        |
+         2 -> 3          : 0        |                                        |
+         4 -> 7          : 13       |****************************************|
+         8 -> 15         : 2        |******                                  |
+
+Function = add_to_page_cache_lru
+     usecs               : count     distribution
+         0 -> 1          : 0        |                                        |
+         2 -> 3          : 0        |                                        |
+         4 -> 7          : 0        |                                        |
+         8 -> 15         : 1        |****************************************|
+
+Function = add_to_page_cache_lru
+     usecs               : count     distribution
+         0 -> 1          : 0        |                                        |
+         2 -> 3          : 305      |****************************************|
+         4 -> 7          : 120      |***************                         |
+         8 -> 15         : 12       |*                                       |
+        16 -> 31         : 9        |*                                       |
+        32 -> 63         : 2        |                                        |
 
 Function = mark_page_accessed
      usecs               : count     distribution
-         0 -> 1          : 723      |****************************************|
-         2 -> 3          : 3        |                                        |
-Detaching...
+         0 -> 1          : 154      |*******************                     |
+         2 -> 3          : 312      |****************************************|
+         4 -> 7          : 34       |****                                    |
+         8 -> 15         : 7        |                                        |
+        16 -> 31         : 3        |                                        |
+        32 -> 63         : 0        |                                        |
+        64 -> 127        : 3        |                                        |
+
+Function = add_to_page_cache_lru
+     usecs               : count     distribution
+         0 -> 1          : 0        |                                        |
+         2 -> 3          : 283      |****************************************|
+         4 -> 7          : 38       |*****                                   |
+         8 -> 15         : 1        |                                        |
+        16 -> 31         : 6        |                                        |
+
+Function = mark_page_accessed
+     usecs               : count     distribution
+         0 -> 1          : 647      |****************************************|
+         2 -> 3          : 172      |**********                              |
+         4 -> 7          : 8        |                                        |
+         8 -> 15         : 2        |                                        |
+        16 -> 31         : 2        |                                        |
+        32 -> 63         : 3        |                                        |
+        64 -> 127        : 1        |                                        |
