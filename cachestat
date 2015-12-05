@@ -40,16 +40,16 @@ def get_meminfo():
         result[k[0]] = int (v[0])
     return result
 
-
-# Set global variables to defaults, I have set total and hits to 1 to avoid divide by zero errors
-#
+# set global variables
 mpa=0
 mbd=0
 apcl=0
 apd=0
-total=1
+total=0
 misses=0
 hits=0
+ratio=0
+debug=0
 
 # args
 examples = """examples:
@@ -187,11 +187,18 @@ while (1):
 
                 if misses < 0:
                     misses =  0
+		
+		if total != 0:		
+		   hits = total - misses
+		   ratio = 100 * float(hits)/float(total)
+		else:
+		   hits = total - misses
+        	   ratio = 100 * hits
+
+	if debug :
+	      print("%d %d %d %d %d %d %d %d %d\n" % (mpa,mbd,apcl,apd,(mpa  - mbd),(apcl - apd ),hits,total,ratio))
 
         counts.clear()
-        # Work out hits and ratio
-        hits = total - misses
-        ratio = 100 * hits / total
 
         # Get memory info
         mem = get_meminfo()
@@ -207,14 +214,16 @@ while (1):
         elif not args.latency or not args.timestamp:
                 print("%8d %8d %8d %7.1f%% %12.0f %10.0f"% (hits,misses,mbd,ratio,buffer,cached))
 
-        mbd=0
+        mpa=0
+	mbd=0
         apcl=0
         apd=0
-        total=1
+        total=0
         misses=0
-        hits=1
+        hits=0
         cached=0
         buffer=0
+	ratio=0
 
 
         if exiting:
