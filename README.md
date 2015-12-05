@@ -8,7 +8,7 @@ Show cache hit/miss ratios
 A collection of learning BCC. Examples taken from Brendan Gregg 
 
 <pre>
-usage: cachestat_v2 [-h] [-i INTERVAL] [-T] [-L]
+usage: cachestat [-h] [-i INTERVAL] [-T] [-L]
 
 show Linux page cache hit/miss statistics
 
@@ -56,7 +56,7 @@ TIME         HITS   MISSES  DIRTIES    RATIO   BUFFERS_MB  CACHED_MB
 </pre>
 
 <pre>
-[root@henky bcc]# ./cachestat_v2 -L
+[root@henky bcc]# ./cachestat -L
 Latency Histogram for Page Cache Function Access
 
 Function = add_to_page_cache_lru
