@@ -1,4 +1,4 @@
-usage: cachestat_v2 [-h] [-i INTERVAL] [-T] [-L]
+usage: cachestat [-h] [-i INTERVAL] [-T] [-L]
 
 show Linux page cache hit/miss statistics
 
