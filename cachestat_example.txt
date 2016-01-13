@@ -49,7 +49,7 @@ We can see that we have 2050 entries in the Dirty column, this was generated as 
 1025+0 records out
 8396800 bytes (8.4 MB) copied, 1.06047 s, 7.9 MB/s
 
-the value 8396800 / PAGESIZE(4096) = 200
+the value 8396800 / PAGESIZE(4096) = 2050
 
 Below shows an example of the histogram showing how long each function took from entry to return in usecs.
 
