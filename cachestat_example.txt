@@ -15,68 +15,41 @@ examples:
     ./cachestat -T -i 1     # include timestamps
 
 [root@localhost bcc]# ./cachestat
-    HITS   MISSES  DIRTIES    RATIO   BUFFERS_MB  CACHED_MB
-       0        0        0     0.0%            0         75
-       0        0        0     0.0%            0         75
-       0        0        0     0.0%            0         75
-       0        0        0     0.0%            0         75
-     119       64        0    65.0%            0         76
-     541      456        0    54.3%            0         78
-       0        0        0     0.0%            0         78
-       0        0        0     0.0%            0         78
-       0        0        0     0.0%            0         78
-       0        0        0     0.0%            0         78
-       0        0        0     0.0%            0         78
-       0        0        0     0.0%            0         78
-       0        0        0     0.0%            0         78
-      -1        0        2   100.0%            0         72
-       0        0        0     0.0%            0         72
-       0        0        0     0.0%            0         72
-       0        0        0     0.0%            0         72
-       0        0        0     0.0%            0         72
-      33      512        0     6.1%            0         74
-     539      264        0    67.1%            0         75
-       0        0        0     0.0%            0         75
-       0        0        0     0.0%            0         75
+    HITS   MISSES  DIRTIES READ HIT% WRITE HIT%   BUFFERS_MB  CACHED_MB
+       0        0        0     0.0%     0.0%            0        134
+       0        0        0     0.0%     0.0%            0        134
+       0        0        0     0.0%     0.0%            0        134
+       0        0        0     0.0%     0.0%            0        134
+     709        0        0   100.0%     0.0%            0        126
+     241        0        0   100.0%     0.0%            0        126
+    1666     3332     1666     0.0%    33.3%            0        132
+     898      768      384    30.9%    23.0%            0        134
+       0        0        0     0.0%     0.0%            0        134
+       0        0        0     0.0%     0.0%            0        134
+       0        0        0     0.0%     0.0%            0        134
 
-
-[root@localhost bcc]# ./cachestat -T
 [root@localhost bcc]# ./cachestat -T 
-TIME         HITS   MISSES  DIRTIES    RATIO   BUFFERS_MB  CACHED_MB
-13:40:42        0        0        0     0.0%            0         80
-13:40:43        0        0        0     0.0%            0         80
-13:40:44        1        1        0    50.0%            0         80
-13:40:45        0        0        0     0.0%            0         80
-13:40:46      -15        0       15   100.0%            0         71
-13:40:47        0        0        0     0.0%            0         71
-13:40:48        0        0        0     0.0%            0         71
-13:40:49        0        0        0     0.0%            0         71
-13:40:50        0        0        0     0.0%            0         71
-13:40:51       33      256        0    11.4%            0         72
-13:40:53      556      520        0    51.7%            0         74
-13:40:54        0        0        0     0.0%            0         74
-13:40:55        0        0        0     0.0%            0         74
-13:40:56      471       20      200    95.9%            0         75
-13:40:57        0        0        0     0.0%            0         75
-13:40:58        0        0        0     0.0%            0         75
-13:40:59        0        0        0     0.0%            0         75
-13:41:00       -1        0        2   100.0%            0         71
-13:41:01        0        0        0     0.0%            0         71
-13:41:02        0        0        0     0.0%            0         71
-13:41:03        0        0        0     0.0%            0         71
-13:41:04        0        0        0     0.0%            0         71
-13:41:05        0        0        0     0.0%            0         71
-13:41:06        0        0        0     0.0%            0         71
-We can see that we have 200 entries in the Dirty column, this was generated as follows. 
+TIME         HITS   MISSES  DIRTIES READ HIT% WRITE HIT%   BUFFERS_MB  CACHED_MB
+21:53:49        0        0        0     0.0%     0.0%            0        134
+21:53:50        0        0        0     0.0%     0.0%            0        134
+21:53:51      708        0        0   100.0%     0.0%            0        126
+21:53:52     1916     3832     1916     0.0%    33.3%            0        133
+21:53:53      619      268      134    54.7%    15.1%            0        134
+21:53:54      720        0        0   100.0%     0.0%            0        126
+21:53:55      241        0        0   100.0%     0.0%            0        126
+21:53:56     1734     3468     1734     0.0%    33.3%            0        132
+21:53:57      818      632      316    34.6%    21.8%            0        134
+21:53:58        0        0        0     0.0%     0.0%            0        134
+21:53:59        0        0        0     0.0%     0.0%            0        134
 
-We can also see the drop or caches at 13:41:00 - echo 3 > /proc/sys/vm/drop_caches
+We can see that we have 2050 entries in the Dirty column, this was generated as follows. 
 
-[root@localhost tools]# dd if=/dev/urandom of=/var/test count=100 bs=8192
-100+0 records in
-100+0 records out
-819200 bytes (819 kB) copied, 0.108842 s, 7.5 MB/s
+[root@localhost ~]# dd if=/dev/urandom of=/root/allas bs=8192 count=1025
+1025+0 records in
+1025+0 records out
+8396800 bytes (8.4 MB) copied, 1.06047 s, 7.9 MB/s
 
-the value 819200 / PAGESIZE(4096) = 200
+the value 8396800 / PAGESIZE(4096) = 200
 
 Below shows an example of the histogram showing how long each function took from entry to return in usecs.
 
