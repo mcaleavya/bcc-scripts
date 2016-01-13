@@ -1,6 +1,6 @@
 usage: cachestat [-h] [-i INTERVAL] [-T] [-L]
 
-show Linux page cache hit/miss statistics
+show Linux page cache hit/miss statistics including read and write hit %
 
 optional arguments:
   -h, --help            show this help message and exit
