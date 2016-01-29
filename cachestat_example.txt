@@ -7,11 +7,11 @@ optional arguments:
   -T, --timestamp       include timestamp on output
 
 examples:
-    ./cachestat -i 1        # print every second hit/miss stats
-    ./cachestat -T 1        # include timestamps with on second samples
     ./cachestat             # run with default options of 5 seconds delay forever
     ./cachestat -T          # run with default options of 5 seconds delay forever with timestamps
-
+    ./cachestat  1          # print every second hit/miss stats
+    ./cachestat -T 1        # include timestamps with on second samples
+    
 
 # ./cachestat 1
     HITS   MISSES  DIRTIES READ_HIT% WRITE_HIT%   BUFFERS_MB  CACHED_MB
