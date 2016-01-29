@@ -8,75 +8,76 @@ Show % cache read & write hit
 A collection of learning BCC. Examples taken from Brendan Gregg 
 
 <pre>
-usage: cachestat [-h] [-i INTERVAL] [-T] [-L]
+USAGE: ./cachestat [-T] [ interval [count] ]
 
 show Linux page cache hit/miss statistics
 
 optional arguments:
-  -h, --help            show this help message and exit
-  -i INTERVAL, --interval INTERVAL
-                        summary interval, seconds
-  -T, --timestamp       include timestamp on output
-  -L, --latency         include latency historgrams on output experimental
+
+  -T                    include timestamp on output
+ 
+
 
 examples:
-    ./cachestat -i 1        # print every second hit/miss stats
-    ./cachestat -L -i 1     # show latency for each function access
-    ./cachestat -T -i 1     # include timestamps
+    ./cachestat             # run with default options of 5 seconds delay forever
+    ./cachestat -T          # run with default options of 5 seconds delay forever with timestamps
+    ./cachestat  1          # print every second hit/miss stats
+    ./cachestat -T 1        # include timestamps with on second samples
 
 </pre>
 
 
 <pre>
-    HITS   MISSES  DIRTIES READ HIT% WRITE HIT%   BUFFERS_MB  CACHED_MB
-       0        0        0     0.0%     0.0%            0        134
-       0        0        0     0.0%     0.0%            0        134
-       0        0        0     0.0%     0.0%            0        134
-       0        0        0     0.0%     0.0%            0        134
-     709        0        0   100.0%     0.0%            0        126
-     241        0        0   100.0%     0.0%            0        126
-    1666     3332     1666     0.0%    33.3%            0        132
-     898      768      384    30.9%    23.0%            0        134
-       0        0        0     0.0%     0.0%            0        134
-       0        0        0     0.0%     0.0%            0        134
-       0        0        0     0.0%     0.0%            0        134
-</pre>
+# ./cachestat 1
+    HITS   MISSES  DIRTIES READ_HIT% WRITE_HIT%   BUFFERS_MB  CACHED_MB
+       0       58        0     0.0%   100.0%            0      11334
+  146113        0        0   100.0%     0.0%            0      11334
+  244143        0        0   100.0%     0.0%            0      11334
+  216833        0        0   100.0%     0.0%            0      11334
+  248209        0        0   100.0%     0.0%            0      11334
+  205825        0        0   100.0%     0.0%            0      11334
+  286654        0        0   100.0%     0.0%            0      11334
+  275850        0        0   100.0%     0.0%            0      11334
+  272883        0        0   100.0%     0.0%            0      11334
+  261633        0        0   100.0%     0.0%            0      11334
+  252826        0        0   100.0%     0.0%            0      11334
+  235253       70        3   100.0%     0.0%            0      11335
+  204946        0        0   100.0%     0.0%            0      11335
+       0        0        0     0.0%     0.0%            0      11335
+       0        0        0     0.0%     0.0%            0      11335
+       0        0        0     0.0%     0.0%            0      11335
 
-<pre>
-[root@localhost bcc]# ./cachestat -T 
-TIME         HITS   MISSES  DIRTIES READ HIT% WRITE HIT%   BUFFERS_MB  CACHED_MB
-21:53:49        0        0        0     0.0%     0.0%            0        134
-21:53:50        0        0        0     0.0%     0.0%            0        134
-21:53:51      708        0        0   100.0%     0.0%            0        126
-21:53:52     1916     3832     1916     0.0%    33.3%            0        133
-21:53:53      619      268      134    54.7%    15.1%            0        134
-21:53:54      720        0        0   100.0%     0.0%            0        126
-21:53:55      241        0        0   100.0%     0.0%            0        126
-21:53:56     1734     3468     1734     0.0%    33.3%            0        132
-21:53:57      818      632      316    34.6%    21.8%            0        134
-21:53:58        0        0        0     0.0%     0.0%            0        134
-21:53:59        0        0        0     0.0%     0.0%            0        134
+Above shows the reading of a 12GB file already cached in the OS page cache and again below with timestamps.
+
+Command used to generate the activity
+# dd if=/root/mnt2/testfile of=/dev/null bs=8192
+1442795+0 records in
+1442795+0 records out
+11819376640 bytes (12 GB) copied, 3.9301 s, 3.0 GB/s
 
 </pre>
 
 <pre>
-[root@henky bcc]# ./cachestat -L
-Latency Histogram for Page Cache Function Access
+# ./cachestat -T 1
+TIME         HITS   MISSES  DIRTIES READ_HIT% WRITE_HIT%   BUFFERS_MB  CACHED_MB
+16:07:10        0        0        0     0.0%     0.0%            0      11336
+16:07:11        0        0        0     0.0%     0.0%            0      11336
+16:07:12   117849        0        0   100.0%     0.0%            0      11336
+16:07:13   212558        0        0   100.0%     0.0%            0      11336
+16:07:14   302559        1        0   100.0%     0.0%            0      11336
+16:07:15   309230        0        0   100.0%     0.0%            0      11336
+16:07:16   305701        0        0   100.0%     0.0%            0      11336
+16:07:17   312754        0        0   100.0%     0.0%            0      11336
+16:07:18   308406        0        0   100.0%     0.0%            0      11336
+16:07:19   298185        0        0   100.0%     0.0%            0      11336
+16:07:20   236128        0        0   100.0%     0.0%            0      11336
+16:07:21   257616        0        0   100.0%     0.0%            0      11336
+16:07:22   179792        0        0   100.0%     0.0%            0      11336
 
-Function = add_to_page_cache_lru
-     usecs               : count     distribution
-         0 -> 1          : 50       |****************************************|
-         2 -> 3          : 22       |*****************                       |
-         4 -> 7          : 8        |******                                  |
-
-Function = account_page_dirtied
-     usecs               : count     distribution
-         0 -> 1          : 79       |****************************************|
-         2 -> 3          : 1        |                                        |
-
-Function = mark_page_accessed
-     usecs               : count     distribution
-         0 -> 1          : 723      |****************************************|
-         2 -> 3          : 3        |                                        |
-Detaching...
+Command used to generate the activity
+# dd if=/root/mnt2/testfile of=/dev/null bs=8192
+1442795+0 records in
+1442795+0 records out
+11819376640 bytes (12 GB) copied, 3.9301 s, 3.0 GB/s
 </pre>
+
