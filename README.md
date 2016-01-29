@@ -22,7 +22,7 @@ examples:
     ./cachestat             # run with default options of 5 seconds delay forever
     ./cachestat -T          # run with default options of 5 seconds delay forever with timestamps
     ./cachestat  1          # print every second hit/miss stats
-    ./cachestat -T 1        # include timestamps with on second samples
+    ./cachestat -T 1        # include timestamps with one second samples
 
 </pre>
 
