@@ -4,7 +4,7 @@ USAGE: ./cachestat [-T] [ interval [count] ]
 show Linux page cache hit/miss statistics including read and write hit %
 
 optional arguments:
-  -T, --timestamp       include timestamp on output
+  -T              include timestamp on output
 
 examples:
     ./cachestat             # run with default options of 5 seconds delay forever
