@@ -14,7 +14,7 @@
 #
 # 09-Sep-2015   Brendan Gregg   Created this.
 # 06-Nov-2015   Allan McAleavy
-# 13-Jan-2016   Allan McAleavy  run pep8 against program
+# 13-Jan-2016   Allan McAleavy  run pep8 against program.
 
 from __future__ import print_function
 from bcc import BPF
