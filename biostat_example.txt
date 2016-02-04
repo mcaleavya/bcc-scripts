@@ -1,0 +1,40 @@
+Example file for biostat.py 
+
+# ./biostat.py 
+
+Device   r/s      w/s      rblk     wblk     rsz      wsz
+
+sdb      0        13       0        52       0        4096
+sdb      0        87       0        43       0        512
+sdb      1        1        0        20       8        20480
+sdb      1        1        0        4        8        4096
+
+We can see that above we have the count of reads & writes, we also have the read & write blocks. We also show each type of i/o size 
+for each count. 
+
+iostat -xkz 1 |grep sd 
+Device:         rrqm/s   wrqm/s     r/s     w/s    rkB/s    wkB/s avgrq-sz avgqu-sz   await r_await w_await  svctm  %util
+sdb               0.00     0.00    0.00  100.00     0.00    95.50     1.91     0.03    0.32    0.00    0.32   0.32   3.20
+sdb               0.00     4.00    0.00    2.00     0.00    24.00    24.00     0.00    0.00    0.00    0.00   0.00   0.00
+
+so (13 * 4096) + ( 87 * 512 ) - 97792 / 1024 = 95.5
+
+This matches with iostat , the formatting needs fixed.
+
+Looking at biosnoop to compare.
+iostat data
+Device:         rrqm/s   wrqm/s     r/s     w/s    rkB/s    wkB/s avgrq-sz avgqu-sz   await r_await w_await  svctm  %util
+sdb               0.00     0.00    0.00  100.00     0.00    95.50     1.91     0.04    0.40    0.00    0.40   0.40   4.00
+
+biosnoop.py > b1.log
+
+s# awk '/dd/{print $7}' b.log |sort -u
+4096
+512
+root@vm000826:/var/tmp/git/bcc/tools# awk '/dd/{print $7}' b.log |grep -wc 512
+87
+root@vm000826:/var/tmp/git/bcc/tools# awk '/dd/{print $7}' b.log |grep -wc 4096
+13
+
+
+
