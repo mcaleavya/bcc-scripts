@@ -44,17 +44,19 @@ while 1:
         if k.tp == 1:
             writes=v.value
             wblk = k.wblk
-            wbk = (k.wblk * writes) /1024
+            wbk = float((k.wblk * writes))/1024
+            #wbk = float(wbk) /1024
         if k.tp == 2:
             reads=v.value
             rblk = k.rblk
-            rbk = (k.rblk * reads) /1024
+            rbk = float((k.rblk * reads) )/1024
+            #rbk = float(rbk)/1024
 
 
         pat = re.compile("^[a-z]")
         if pat.match(k.disk_name):
            disk = k.disk_name
-           print("%-8s %-8d %-8d %-8d %-8d %-8d %-8d" % (disk,reads,writes,rbk,wbk,rblk,wblk))
+           print("%-8s %-8d %-8d %-8.2f %-8.2f %-8d %-8d" % (disk,reads,writes,rbk,wbk,rblk,wblk))
 
         counts.clear()
     reads = 0
