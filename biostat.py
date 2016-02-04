@@ -20,6 +20,7 @@ def signal_ignore(signal, frame):
 
 # load BPF program
 b = BPF(src_file="bio.c")
+b.attach_kprobe(event_re="blk_start_request", fn_name="trace_req_start")
 b.attach_kprobe(event_re="blk_account_io_completion", fn_name="do_count")
 
 # header
@@ -30,8 +31,10 @@ disk=""
 wblk=0
 rbk=0
 wbk=0
+wsvc=0
+rsvc=0
 # output
-print("%-8s %-8s %-8s %-8s %-8s %-8s %-8s\n" % ( "Device","r/s","w/s","rblk","wblk","rsz","wsz"))
+print("\n%-8s %-8s %-8s %-12s %-12s %-8s %-8s %-12s %-12s" % ( "Device","r/s","w/s","r/Kb","w/Kb","rsz","wsz","r_ms","w_ms"))
 while 1:
     try:
         sleep(1)
@@ -45,18 +48,18 @@ while 1:
             writes=v.value
             wblk = k.wblk
             wbk = float((k.wblk * writes))/1024
-            #wbk = float(wbk) /1024
+            wsvc=k.wsvc
         if k.tp == 2:
             reads=v.value
             rblk = k.rblk
             rbk = float((k.rblk * reads) )/1024
-            #rbk = float(rbk)/1024
+            rsvc=k.rsvc
 
 
         pat = re.compile("^[a-z]")
         if pat.match(k.disk_name):
            disk = k.disk_name
-           print("%-8s %-8d %-8d %-8.2f %-8.2f %-8d %-8d" % (disk,reads,writes,rbk,wbk,rblk,wblk))
+           print("%-8s %-8d %-8d %-12.2f %-12.2f %-8d %-8d %-12.2f %-12.2f" % (disk,reads,writes,rbk,wbk,rblk,wblk,rsvc,wsvc))
 
         counts.clear()
     reads = 0
@@ -65,6 +68,8 @@ while 1:
     rblk = 0
     rbk = 0
     wbk = 0
+    wsvc =0
+    rsvc=0
 
     if exiting:
         print("Detaching...")
