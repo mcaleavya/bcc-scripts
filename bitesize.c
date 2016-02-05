@@ -28,7 +28,6 @@ BPF_HASH(commbyreq, struct request *, struct val_t);
 
 int trace_pid_start(struct pt_regs *ctx, struct request *req)
 {
-    u32 pid;
     struct val_t val = {};
     if (bpf_get_current_comm(&val.name, sizeof(val.name)) == 0) {
         commbyreq.update(&req, &val);
@@ -41,14 +40,15 @@ int do_count (struct pt_regs *ctx, struct request *req)
 {
         struct val_t *valp;
 
-        valp = commbyreq.lookup(&req);
-        if ( valp ==  0)  {
-         return 0;
-        }
-        if ( req->__data_len > 0 ) {
+    valp = commbyreq.lookup(&req);
+    if ( valp ==  0)  {
+       return 0;
+    }
+
+    if ( req->__data_len > 0 ) {
         struct proc_key_t key = {.slot = bpf_log2l(req->__data_len / 1024)};
         bpf_probe_read(&key.name, sizeof(key.name),valp->name);
         dist.increment(key);
-        }
+    }
         return 0;
 }
