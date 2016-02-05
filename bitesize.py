@@ -6,6 +6,7 @@
 # USAGE: bitesize
 # Ctrl-C will print the partially gathered histogram then exit.
 #
+#
 # Copyright (c) 2016 Allan McAleavy
 # Licensed under the Apache License, Version 2.0 (the "License")
 #
@@ -25,7 +26,6 @@ print("Tracing... Hit Ctrl-C to end.")
 dist = b.get_table("dist")
 
 try:
-        sleep(99999999)
+    sleep(99999999)
 except KeyboardInterrupt:
-        print
-        dist.print_log2_hist("Kbytes", "Process Name:")
+    dist.print_log2_hist("Kbytes", "Process Name:")
