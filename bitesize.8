@@ -17,6 +17,13 @@ CONFIG_BPF and bcc.
 Count I/O size per process until Ctrl-C is hit:
 #
 .B bitesize
+.SH FIELDS
+count
+How many I/O fell into this range
+.TP
+distribution
+An ASCII bar chart to visualize the distribution (count column)
+
 .SH OVERHEAD
 This traces kernel block I/O functions to update a histgroam, which are
 asynchronously copied to user-space. This method is very efficient, and 
