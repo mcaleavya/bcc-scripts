@@ -13,7 +13,6 @@
 #include <uapi/linux/ptrace.h>
 #include <linux/blkdev.h>
 
-
 struct proc_key_t  {
     char name[TASK_COMM_LEN];
     u64 slot;
@@ -34,7 +33,6 @@ int trace_pid_start(struct pt_regs *ctx, struct request *req)
     }
     return 0;
 }
-
 
 int do_count (struct pt_regs *ctx, struct request *req)
 {
