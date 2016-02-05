@@ -17,7 +17,7 @@
 typedef struct proc_key_t  {
     char name[TASK_COMM_LEN];
     u64 slot;
-} disk_key_t;
+};
 
 struct val_t {
     char name[TASK_COMM_LEN];
@@ -50,5 +50,5 @@ int do_count (struct pt_regs *ctx, struct request *req)
         bpf_probe_read(&key.name, sizeof(key.name),valp->name);
         dist.increment(key);
     }
-        return 0;
+       return 0;
 }
