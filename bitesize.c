@@ -2,7 +2,7 @@
  * bitehist.c   Block I/O size histogram.
  *              For Linux, uses BCC, eBPF. See .py file.
  *
- * Copyright (c) 2013-2015 PLUMgrid, http://plumgrid.com
+ * Copyright (c) 2015 Allan McAleavy
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of version 2 of the GNU General Public
  * License as published by the Free Software Foundation.
