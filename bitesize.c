@@ -44,7 +44,7 @@ int do_count (struct pt_regs *ctx, struct request *req)
        return 0;
     }
 
-    if ( req->__data_len > 0 ) {
+    if (req->__data_len > 0) {
         struct proc_key_t key = {.slot = bpf_log2l(req->__data_len / 1024)};
         bpf_probe_read(&key.name, sizeof(key.name),valp->name);
         dist.increment(key);
