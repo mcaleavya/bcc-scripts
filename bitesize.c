@@ -39,7 +39,7 @@ int do_count (struct pt_regs *ctx, struct request *req)
         struct val_t *valp;
 
     valp = commbyreq.lookup(&req);
-    if ( valp ==  0)  {
+    if ( valp ==  0) {
        return 0;
     }
 
