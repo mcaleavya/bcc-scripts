@@ -14,7 +14,7 @@
 #include <linux/blkdev.h>
 
 
-typedef struct proc_key_t  {
+struct proc_key_t  {
     char name[TASK_COMM_LEN];
     u64 slot;
 };
