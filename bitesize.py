@@ -6,7 +6,6 @@
 # USAGE: bitesize
 # Ctrl-C will print the partially gathered histogram then exit.
 #
-#
 # Copyright (c) 2016 Allan McAleavy
 # Licensed under the Apache License, Version 2.0 (the "License")
 #
