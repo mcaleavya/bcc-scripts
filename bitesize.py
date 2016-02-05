@@ -28,14 +28,9 @@ print("Tracing... Hit Ctrl-C to end.")
 # trace until Ctrl-C
 exiting = 0
 dist = b.get_table("dist")
-while (1):
-    try:
-        sleep(1)
-    except KeyboardInterrupt:
-        exiting = 1
-    dist.print_log2_hist("Kbytes", "Process Name")
-    dist.clear()
 
-    if exiting :
-        exit()
-
+try:
+        sleep(99999999)
+except KeyboardInterrupt:
+        print
+        dist.print_log2_hist("Kbytes", "Process Name:")
