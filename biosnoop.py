@@ -35,7 +35,7 @@ struct key_t {
     u64 sector;
     u64 len; 
     char disk_name[DISK_NAME_LEN];
-    char name[16];
+    char name[TASK_COMM_LEN];
 };
 
 
@@ -101,8 +101,6 @@ int trace_req_completion(struct pt_regs *ctx, struct request *req)
 	bpf_probe_read(&key.disk_name, sizeof(key.disk_name), req->rq_disk->disk_name);
     }
 
-    // output remaining details
-
     if (req->cmd_flags & REQ_WRITE) {
         key.rwflag=1;	
     } else {
@@ -141,8 +139,6 @@ print("%-14s %-14s %-6s %-7s %-2s %-9s %-7s %7s" % ("TIME(s)", "COMM", "PID",
 start_ts = 0
 rwflg = ""
 
-# format output
-
 # process event
 def print_event(cpu, data, size):
     event = ct.cast(data, ct.POINTER(Data)).contents
@@ -154,7 +150,6 @@ def print_event(cpu, data, size):
     print("%-14.9f %-14.14s %-6s %-7s %-2s %-9s %-7s %7.2f" % (
         start_ts,event.name , event.pid, event.disk_name, rwflg, event.sector,
         event.len,event.delta/100000))
-    
 
 b["events"].open_perf_buffer(print_event)
 while 1:
