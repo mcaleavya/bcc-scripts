@@ -18,6 +18,8 @@ import ctypes as ct
 
 # load BPF program
 bpf_text = """
+#include <uapi/linux/ptrace.h>
+
 struct str_t {
     u64 pid;
     char str[80];
@@ -25,7 +27,6 @@ struct str_t {
 
 BPF_PERF_OUTPUT(events);
 
-#include <uapi/linux/ptrace.h>
 int printret(struct pt_regs *ctx) {
     struct str_t data  = {};
     u32 pid;
