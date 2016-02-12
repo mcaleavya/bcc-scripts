@@ -75,6 +75,7 @@ int trace_req_completion(struct pt_regs *ctx, struct request *req)
     u32 *pidp = 0;
     struct val_t *valp;
     struct key_t key ={};
+    u64 ts;
 
     // fetch timestamp and calculate delta
     tsp = start.lookup(&req);
@@ -82,8 +83,9 @@ int trace_req_completion(struct pt_regs *ctx, struct request *req)
         // missed tracing issue
         return 0;
     }
-    key.delta = bpf_ktime_get_ns() - *tsp;
-    key.ts = bpf_ktime_get_ns();
+    ts =  bpf_ktime_get_ns();
+    key.delta = ts - *tsp;
+    key.ts = ts / 1000;
 
     valp = infobyreq.lookup(&req);
     if (valp == 0) {
@@ -136,22 +138,31 @@ print("%-14s %-14s %-6s %-7s %-2s %-9s %-7s %7s" % ("TIME(s)", "COMM", "PID",
     "DISK", "T", "SECTOR", "BYTES", "LAT(ms)"))
 
 rwflg = ""
-start_ts = 0
-
 # process event
 def print_event(cpu, data, size):
     event = ct.cast(data, ct.POINTER(Data)).contents
     val = -1
+    global start_ts
+    global prev_ts
+    global delta
     if event.rwflag == 1:
         rwflg = "W"
     if event.rwflag == 0:
         rwflg = "R"
     if not re.match('\?', event.name):
         val = event.sector
+    if start_ts == 0:
+        prev_ts = start_ts
+    if start_ts == 1:
+        delta = float(delta) + (event.ts - prev_ts)
     print("%-14.9f %-14.14s %-6s %-7s %-2s %-9s %-7s %7.2f" % (
-        start_ts, event.name, event.pid, event.disk_name, rwflg, val,
-        event.len, event.delta / 1000000))
-
+        delta / 1000000, event.name, event.pid, event.disk_name, rwflg, val,
+        event.len, float(event.delta) / 1000000))
+    prev_ts = event.ts
+    start_ts = 1
 b["events"].open_perf_buffer(print_event)
+start_ts = 0
+prev_ts = 0
+delta = 0
 while 1:
     b.kprobe_poll()
