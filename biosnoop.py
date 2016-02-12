@@ -17,6 +17,7 @@
 from __future__ import print_function
 from bcc import BPF
 import ctypes as ct
+import re
 
 # load BPF program
 b = BPF(text="""
@@ -33,7 +34,8 @@ struct key_t {
     u64 rwflag;
     u64 delta;
     u64 sector;
-    u64 len; 
+    u64 len;
+    u64 ts;
     char disk_name[DISK_NAME_LEN];
     char name[TASK_COMM_LEN];
 };
@@ -81,30 +83,25 @@ int trace_req_completion(struct pt_regs *ctx, struct request *req)
         return 0;
     }
     key.delta = bpf_ktime_get_ns() - *tsp;
-
-    //
-    // Fetch and output issuing pid and comm.
-    // As bpf_trace_prink() is limited to a maximum of 1 string and 2
-    // integers, we'll use more than one to output the data.
-    //
+    key.ts = bpf_ktime_get_ns();
 
     valp = infobyreq.lookup(&req);
-      
     if (valp == 0) {
-	key.len = req->__data_len;
-	strcpy(key.name,"?");
-    } else {
-	key.pid = valp->pid;
         key.len = req->__data_len;
-	key.sector = req->__sector;
-	bpf_probe_read(&key.name, sizeof(key.name), valp->name);
-	bpf_probe_read(&key.disk_name, sizeof(key.disk_name), req->rq_disk->disk_name);
+        strcpy(key.name,"?");
+    } else {
+        key.pid = valp->pid;
+        key.len = req->__data_len;
+        key.sector = req->__sector;
+        bpf_probe_read(&key.name, sizeof(key.name), valp->name);
+        bpf_probe_read(&key.disk_name, sizeof(key.disk_name),
+                       req->rq_disk->disk_name);
     }
 
     if (req->cmd_flags & REQ_WRITE) {
-        key.rwflag=1;	
+        key.rwflag=1;
     } else {
-	key.rwflag=0;
+        key.rwflag=0;
     }
     events.perf_submit(ctx,&key,sizeof(key));
     start.delete(&req);
@@ -130,27 +127,31 @@ class Data(ct.Structure):
         ("delta", ct.c_ulonglong),
         ("sector", ct.c_ulonglong),
         ("len", ct.c_ulonglong),
-        ("disk_name", ct.c_char * DISK_NAME_LEN ),
+        ("ts", ct.c_ulonglong),
+        ("disk_name", ct.c_char * DISK_NAME_LEN),
         ("name", ct.c_char * TASK_COMM_LEN)
     ]
 # header
 print("%-14s %-14s %-6s %-7s %-2s %-9s %-7s %7s" % ("TIME(s)", "COMM", "PID",
     "DISK", "T", "SECTOR", "BYTES", "LAT(ms)"))
-start_ts = 0
+
 rwflg = ""
+start_ts = 0
 
 # process event
 def print_event(cpu, data, size):
     event = ct.cast(data, ct.POINTER(Data)).contents
+    val = -1
     if event.rwflag == 1:
-       rwflg = "W"
+        rwflg = "W"
     if event.rwflag == 0:
-       rwflg = "R"
-    
+        rwflg = "R"
+    if not re.match('\?', event.name):
+        val = event.sector
     print("%-14.9f %-14.14s %-6s %-7s %-2s %-9s %-7s %7.2f" % (
-        start_ts,event.name , event.pid, event.disk_name, rwflg, event.sector,
-        event.len,event.delta/100000))
+        start_ts, event.name, event.pid, event.disk_name, rwflg, val,
+        event.len, event.delta / 1000000))
 
 b["events"].open_perf_buffer(print_event)
 while 1:
-  b.kprobe_poll() 
+    b.kprobe_poll()
