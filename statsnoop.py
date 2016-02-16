@@ -10,7 +10,6 @@
 # Licensed under the Apache License, Version 2.0 (the "License")
 #
 # 08-Feb-2016   Brendan Gregg   Created this.
-# 16-Feb-2016   Allan McAleavy updated for BPF_PERF_OUTPUT
 
 from __future__ import print_function
 from bcc import BPF
@@ -132,6 +131,10 @@ class Data(ct.Structure):
         ("fname", ct.c_char * 255)
     ]
 
+start_ts = 0
+prev_ts = 0
+delta = 0
+
 # header
 if args.timestamp:
     print("%-14s" % ("TIME(s)"), end="")
@@ -140,8 +143,33 @@ print("%-6s %-16s %4s %3s %s" % ("PID", "COMM", "FD", "ERR", "PATH"))
 # process event
 def print_event(cpu, data, size):
     event = ct.cast(data, ct.POINTER(Data)).contents
+    global start_ts
+    global prev_ts
+    global delta
 
-    print("%-6d %-16s %4d %3d %s" % (event.pid, event.comm, event.ret, event.ret, event.fname))
+#    if (args.failed and (event.ret >= 0)):
+#        continue
+
+    # split return value into FD and errno columns
+    if event.ret >= 0:
+        fd_s = event.ret
+        err = 0
+    else:
+        fd_s = -1
+        err = - event.ret
+
+    if start_ts == 0:
+        prev_ts = start_ts
+
+    if start_ts == 1:
+        delta = float(delta) + (event.ts - prev_ts)
+
+
+    print("%-14.9f" % (delta / 1000000), end="")
+    print("%-6d %-16s %4d %3d %s" % (event.pid, event.comm, fd_s, err, event.fname))
+
+    prev_ts = event.ts
+    start_ts = 1
 
 # loop with callback to print_event
 b["events"].open_perf_buffer(print_event)
