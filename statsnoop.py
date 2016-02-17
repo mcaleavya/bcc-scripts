@@ -46,7 +46,7 @@ struct val_t {
     u32 pid;
     u64 ts;
     char comm[16];
-    const char * fname;
+    const char *fname;
 };
 
 struct data_t {
@@ -74,6 +74,7 @@ int trace_entry(struct pt_regs *ctx, const char __user *filename)
         val.fname = filename;
         infobyreq.update(&pid, &val);
     }
+
     return 0;
 };
 
@@ -147,9 +148,6 @@ def print_event(cpu, data, size):
     global prev_ts
     global delta
 
-#    if (args.failed and (event.ret >= 0)):
-#        continue
-
     # split return value into FD and errno columns
     if event.ret >= 0:
         fd_s = event.ret
@@ -166,6 +164,10 @@ def print_event(cpu, data, size):
 
     if args.timestamp:
         print("%-14.9f" % (delta / 1000000), end="")
+
+    if (args.failed and (event.ret >= 0)):
+        next
+
     print("%-6d %-16s %4d %3d %s" % (event.pid, event.comm, fd_s, err, event.fname))
 
     prev_ts = event.ts
@@ -174,4 +176,4 @@ def print_event(cpu, data, size):
 # loop with callback to print_event
 b["events"].open_perf_buffer(print_event)
 while 1:
-    b.kprobe_poll()
+   b.kprobe_poll()
