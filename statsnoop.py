@@ -40,6 +40,7 @@ debug = 0
 # define BPF program
 bpf_text = """
 #include <uapi/linux/ptrace.h>
+#include <linux/blkdev.h>
 
 struct val_t {
     u32 pid;
@@ -67,13 +68,12 @@ int trace_entry(struct pt_regs *ctx, const char __user *filename)
     u32 pid = bpf_get_current_pid_tgid();
 
     FILTER
-    if  (bpf_get_current_comm(&val.comm, sizeof(val.comm)) == 0) {
+    if (bpf_get_current_comm(&val.comm, sizeof(val.comm)) == 0) {
         val.pid = bpf_get_current_pid_tgid();
         val.ts = bpf_ktime_get_ns();
         val.fname = filename;
         infobyreq.update(&pid, &val);
     }
-
     return 0;
 };
 
@@ -97,10 +97,9 @@ int trace_return(struct pt_regs *ctx)
     data.ts = tsp /1000;
     data.ret = ctx->ax;
 
-    //bpf_trace_printk("%d %s \\n", ret, data.fname);
-    args_filename.delete(&pid);
     events.perf_submit(ctx,&data,sizeof(data));
     infobyreq.delete(&pid);
+    args_filename.delete(&pid);
 
     return 0;
 }
@@ -165,8 +164,8 @@ def print_event(cpu, data, size):
     if start_ts == 1:
         delta = float(delta) + (event.ts - prev_ts)
 
-
-    print("%-14.9f" % (delta / 1000000), end="")
+    if args.timestamp:
+        print("%-14.9f" % (delta / 1000000), end="")
     print("%-6d %-16s %4d %3d %s" % (event.pid, event.comm, fd_s, err, event.fname))
 
     prev_ts = event.ts
@@ -176,4 +175,3 @@ def print_event(cpu, data, size):
 b["events"].open_perf_buffer(print_event)
 while 1:
     b.kprobe_poll()
-
