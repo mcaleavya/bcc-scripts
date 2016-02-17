@@ -151,6 +151,9 @@ def print_event(cpu, data, size):
     global start_ts
     global prev_ts
     global delta
+    global cont
+
+    cont = event.ret
 
     # split return value into FD and errno columns
     if event.ret >= 0:
@@ -166,11 +169,13 @@ def print_event(cpu, data, size):
     if start_ts == 1:
         delta = float(delta) + (event.ts - prev_ts)
 
+    if (args.failed and (event.ret >= 0)):
+        start_ts = 1
+        prev_ts = event.ts
+        return
+
     if args.timestamp:
         print("%-14.9f" % (delta / 1000000), end="")
-
-    if (args.failed and (event.ret >= 0)):
-        next
 
     print("%-6d %-16s %4d %3d %s" % (event.pid, event.comm,
         fd_s, err, event.fname))
