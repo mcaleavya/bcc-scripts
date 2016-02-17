@@ -10,6 +10,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License")
 #
 # 08-Feb-2016   Brendan Gregg   Created this.
+# 17-Feb-2016   Allan McAleavy updated for BPF_PERF_OUTPUT
 
 from __future__ import print_function
 from bcc import BPF
