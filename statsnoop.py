@@ -40,12 +40,13 @@ debug = 0
 # define BPF program
 bpf_text = """
 #include <uapi/linux/ptrace.h>
-#include <linux/blkdev.h>
+#include <uapi/linux/limits.h>
+#include <linux/sched.h>
 
 struct val_t {
     u32 pid;
     u64 ts;
-    char comm[16];
+    char comm[TASK_COMM_LEN];
     const char *fname;
 };
 
@@ -54,12 +55,12 @@ struct data_t {
     u64 ts;
     u64 delta;
     int ret;
-    char comm[16];
-    char fname[255];
+    char comm[TASK_COMM_LEN];
+    char fname[NAME_MAX];
 };
 
 BPF_HASH(args_filename, u32, const char *);
-BPF_HASH(infobyreq, u32,struct val_t);
+BPF_HASH(infotmp, u32,struct val_t);
 BPF_PERF_OUTPUT(events);
 
 int trace_entry(struct pt_regs *ctx, const char __user *filename)
@@ -72,7 +73,7 @@ int trace_entry(struct pt_regs *ctx, const char __user *filename)
         val.pid = bpf_get_current_pid_tgid();
         val.ts = bpf_ktime_get_ns();
         val.fname = filename;
-        infobyreq.update(&pid, &val);
+        infotmp.update(&pid, &val);
     }
 
     return 0;
@@ -86,7 +87,7 @@ int trace_return(struct pt_regs *ctx)
 
     u64 tsp = bpf_ktime_get_ns();
 
-    valp = infobyreq.lookup(&pid);
+    valp = infotmp.lookup(&pid);
     if (valp == 0) {
         // missed entry
         return 0;
@@ -99,7 +100,7 @@ int trace_return(struct pt_regs *ctx)
     data.ret = ctx->ax;
 
     events.perf_submit(ctx,&data,sizeof(data));
-    infobyreq.delete(&pid);
+    infotmp.delete(&pid);
     args_filename.delete(&pid);
 
     return 0;
@@ -122,14 +123,17 @@ b.attach_kretprobe(event="sys_stat", fn_name="trace_return")
 b.attach_kretprobe(event="sys_statfs", fn_name="trace_return")
 b.attach_kretprobe(event="sys_newstat", fn_name="trace_return")
 
+TASK_COMM_LEN = 16    # linux/sched.h
+NAME_MAX = 255        # linux/limits.h
+
 class Data(ct.Structure):
     _fields_ = [
         ("pid", ct.c_ulonglong),
         ("ts", ct.c_ulonglong),
         ("delta", ct.c_ulonglong),
         ("ret", ct.c_int),
-        ("comm", ct.c_char * 16),
-        ("fname", ct.c_char * 255)
+        ("comm", ct.c_char * TASK_COMM_LEN),
+        ("fname", ct.c_char * NAME_MAX)
     ]
 
 start_ts = 0
@@ -168,7 +172,8 @@ def print_event(cpu, data, size):
     if (args.failed and (event.ret >= 0)):
         next
 
-    print("%-6d %-16s %4d %3d %s" % (event.pid, event.comm, fd_s, err, event.fname))
+    print("%-6d %-16s %4d %3d %s" % (event.pid, event.comm,
+        fd_s, err, event.fname))
 
     prev_ts = event.ts
     start_ts = 1
@@ -176,4 +181,4 @@ def print_event(cpu, data, size):
 # loop with callback to print_event
 b["events"].open_perf_buffer(print_event)
 while 1:
-   b.kprobe_poll()
+    b.kprobe_poll()
